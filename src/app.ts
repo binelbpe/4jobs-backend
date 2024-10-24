@@ -33,7 +33,7 @@ const { io: recruiterIo, userManager: recruiterSocketManager, eventEmitter: recr
 
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.CLIENT_URL,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
   allowedHeaders: 'Content-Type,Authorization',
 }));

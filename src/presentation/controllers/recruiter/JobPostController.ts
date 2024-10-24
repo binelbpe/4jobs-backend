@@ -122,17 +122,17 @@ console.log("jobuid page limit",jobId,page,limit)
     }
   }
 
-  async getFilteredApplicants(req: Request, res: Response): Promise<void> {
-    console.log('getFilteredApplicants controller method called');
-    try {
-      const { jobId } = req.params;
-      console.log(`Fetching filtered applicants for jobId: ${jobId}`);
-      const filteredApplicants = await this.jobPostUseCase.getFilteredApplicants(jobId);
-      console.log(`Filtered applicants returned: ${filteredApplicants.length}`);
-      res.json(filteredApplicants);
-    } catch (error) {
-      console.error('Error in getFilteredApplicants:', error);
-      res.status(500).json({ error: 'Failed to fetch filtered applicants' });
-    }
-  }
+  // async getFilteredApplicants(req: Request, res: Response): Promise<void> {
+  //   console.log('getFilteredApplicants controller method called');
+  //   try {
+  //     const { jobId } = req.params;
+  //     console.log(`Fetching filtered applicants for jobId: ${jobId}`);
+  //     const filteredApplicants = await this.jobPostUseCase.getFilteredApplicants(jobId);
+  //     console.log(`Filtered applicants returned: ${filteredApplicants.length}`);
+  //     res.json(filteredApplicants);
+  //   } catch (error) {
+  //     console.error('Error in getFilteredApplicants:', error);
+  //     res.status(500).json({ error: 'Failed to fetch filtered applicants' });
+  //   }
+  // }
 }

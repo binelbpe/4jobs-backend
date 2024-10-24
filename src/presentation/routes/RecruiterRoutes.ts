@@ -139,10 +139,10 @@ recruiterRouter.get(
   jobPostController.getAllJobPosts.bind(jobPostController)
 );
 
-recruiterRouter.get(
-  "/filtered-applicants/:jobId",
-  jobPostController.getFilteredApplicants.bind(jobPostController)
-);
+// recruiterRouter.get(
+//   "/filtered-applicants/:jobId",
+//   jobPostController.getFilteredApplicants.bind(jobPostController)
+// );
 
 // Add a new route for refreshing recruiter token
 recruiterRouter.post('/refresh-token', recruiterController.refreshRecruiterToken.bind(recruiterController));

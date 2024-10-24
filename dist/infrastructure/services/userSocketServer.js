@@ -20,7 +20,7 @@ function setupUserSocketServer(server, container) {
     const io = new socket_io_1.Server(server, {
         path: '/user-socket',
         cors: {
-            origin: "http://localhost:3000",
+            origin: process.env.CLIENT_URL,
             methods: ["GET", "POST"]
         }
     });

@@ -36,7 +36,7 @@ exports.recruiterSocketManager = recruiterSocketManager;
 exports.recruiterEventEmitter = recruiterEventEmitter;
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
-    origin: 'http://localhost:3000',
+    origin: process.env.CLIENT_URL,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     allowedHeaders: 'Content-Type,Authorization',
 }));

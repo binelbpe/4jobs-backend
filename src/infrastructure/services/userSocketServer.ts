@@ -12,7 +12,7 @@ export function setupUserSocketServer(server: HTTPServer, container: Container) 
   const io = new SocketIOServer(server, {
     path: '/user-socket',
     cors: {
-      origin: "http://localhost:3000",
+      origin: process.env.CLIENT_URL,
       methods: ["GET", "POST"]
     }
   });

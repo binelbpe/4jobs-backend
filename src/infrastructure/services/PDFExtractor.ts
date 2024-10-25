@@ -6,6 +6,7 @@ export class PDFExtractor {
   private poppler: Poppler;
 
   constructor() {
+    // Initialize Poppler without parameters, paths will be added in method options
     this.poppler = new Poppler();
   }
 
@@ -16,7 +17,11 @@ export class PDFExtractor {
       const options = {
         maintainLayout: true,
         quiet: true,
-        pdfToTextPath: process.env.PDFTOTEXT_PATH || '/usr/bin/pdftotext' 
+        pdfToTextPath: '/usr/bin/pdftotext',
+        pdfInfoPath: '/usr/bin/pdfinfo',
+        pdfToPpmPath: '/usr/bin/pdftoppm',
+        pdfSeparatePath: '/usr/bin/pdfseparate',
+        pdfToHtmlPath: '/usr/bin/pdftohtml'
       };
 
       const result = await this.poppler.pdfToText(buffer, options);

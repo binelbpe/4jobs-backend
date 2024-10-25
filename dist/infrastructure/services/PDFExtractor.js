@@ -23,6 +23,7 @@ const inversify_1 = require("inversify");
 const node_poppler_1 = require("node-poppler");
 let PDFExtractor = class PDFExtractor {
     constructor() {
+        // Initialize Poppler without parameters, paths will be added in method options
         this.poppler = new node_poppler_1.Poppler();
     }
     extractText(buffer) {
@@ -32,7 +33,11 @@ let PDFExtractor = class PDFExtractor {
                 const options = {
                     maintainLayout: true,
                     quiet: true,
-                    pdfToTextPath: process.env.PDFTOTEXT_PATH || '/usr/bin/pdftotext'
+                    pdfToTextPath: '/usr/bin/pdftotext',
+                    pdfInfoPath: '/usr/bin/pdfinfo',
+                    pdfToPpmPath: '/usr/bin/pdftoppm',
+                    pdfSeparatePath: '/usr/bin/pdfseparate',
+                    pdfToHtmlPath: '/usr/bin/pdftohtml'
                 };
                 const result = yield this.poppler.pdfToText(buffer, options);
                 if (typeof result === 'string') {

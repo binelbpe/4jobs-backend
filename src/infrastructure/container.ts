@@ -102,7 +102,7 @@ import { IResumeRepository } from "../domain/interfaces/repositories/user/IResum
 import { MongoResumeRepository } from "./database/mongoose/repositories/MongoResumeRepository";
 import { GenerateResumeUseCase } from "../application/usecases/user/GenerateResumeUseCase";
 import { ResumeController } from "../presentation/controllers/user/ResumeController";
-// import { PDFExtractor } from "./services/PDFExtractor";
+import { PDFExtractor } from "./services/PDFExtractor";
 
 const container = new Container();
 
@@ -199,7 +199,7 @@ container
 container.bind<EditPostUseCase>(TYPES.EditPostUseCase).to(EditPostUseCase);
 container.bind<ReportJobUseCase>(TYPES.ReportJobUseCase).to(ReportJobUseCase);
 container.bind<S3Service>(TYPES.S3Service).to(S3Service);
-// container.bind<PDFExtractor>(TYPES.PDFExtractor).to(PDFExtractor);
+container.bind<PDFExtractor>(TYPES.PDFExtractor).to(PDFExtractor);
 
 container
   .bind<IConnectionRepository>(TYPES.IConnectionRepository)

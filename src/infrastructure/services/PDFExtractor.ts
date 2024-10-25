@@ -12,14 +12,15 @@ export class PDFExtractor {
   async extractText(buffer: Buffer): Promise<string> {
     try {
       console.log("Starting PDF extraction");
-      
+
       const options = {
         maintainLayout: true,
-        quiet: true
+        quiet: true,
+        pdfToTextPath: process.env.PDFTOTEXT_PATH || '/usr/bin/pdftotext' 
       };
 
-      const result = await this.poppler.pdfToText(buffer);
-      
+      const result = await this.poppler.pdfToText(buffer, options);
+
       if (typeof result === 'string') {
         console.log(`PDF extraction completed. Text length: ${result.length}`);
         console.log("First 200 characters of extracted text:", result.substring(0, 200));

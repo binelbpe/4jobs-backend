@@ -90,7 +90,11 @@ function setupUserSocketServer(server, container) {
         });
         socket.on("userCallOffer", (data) => __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log("[VIDEO CALL] Offer SDP:", JSON.parse(Buffer.from(data.offer, 'base64').toString()));
+                console.log(`[VIDEO CALL] Call offer received:`, {
+                    from: socket.userId,
+                    to: data.recipientId,
+                    offerPresent: !!data.offer
+                });
                 console.log(`[VIDEO CALL] User ${socket.userId} is initiating a call to ${data.recipientId}`);
                 if (!socket.userId) {
                     throw new Error("User not authenticated");
@@ -126,9 +130,9 @@ function setupUserSocketServer(server, container) {
                 }), 30000); // 30 second timeout
             }
             catch (error) {
-                console.error("[VIDEO CALL] Error:", error);
+                console.error("[VIDEO CALL] Error in call offer:", error);
                 socket.emit("callError", {
-                    message: "Failed to initiate call",
+                    message: "Failed to process call offer",
                     details: error instanceof Error ? error.message : 'Unknown error'
                 });
             }

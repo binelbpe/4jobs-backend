@@ -38,16 +38,16 @@ exports.recruiterEventEmitter = recruiterEventEmitter;
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
     origin: process.env.CLIENT_URL,
-    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-    exposedHeaders: ["Content-Length", "Content-Type"],
+    exposedHeaders: ['Content-Length', 'Content-Type'],
 }));
-// Add WebRTC-specific headers
+// Add WebRTC specific headers
 app.use((req, res, next) => {
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
     next();
 });
 app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../uploads")));

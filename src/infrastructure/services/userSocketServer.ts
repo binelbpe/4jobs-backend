@@ -117,6 +117,7 @@ export function setupUserSocketServer(
       "userCallOffer",
       async (data: { recipientId: string; offer: string }) => {
         try {
+          console.log("[VIDEO CALL] Offer SDP:", JSON.parse(Buffer.from(data.offer, 'base64').toString()));
           console.log(
             `[VIDEO CALL] User ${socket.userId} is initiating a call to ${data.recipientId}`
           );
@@ -152,9 +153,21 @@ export function setupUserSocketServer(
             });
             await userVideoCallUseCase.endCall(call.id);
           }
+
+          // Add timeout for call acceptance
+          setTimeout(async () => {
+            const call = await userVideoCallUseCase.getActiveCall(socket.userId!);
+            if (call && call.status === 'pending') {
+              await userVideoCallUseCase.endCall(call.id);
+              socket.emit("callError", { message: "Call timed out" });
+            }
+          }, 30000); // 30 second timeout
         } catch (error) {
-          console.error("[VIDEO CALL] Error initiating call:", error);
-          socket.emit("callError", { message: "Failed to initiate call" });
+          console.error("[VIDEO CALL] Error:", error);
+          socket.emit("callError", { 
+            message: "Failed to initiate call",
+            details: error instanceof Error ? error.message : 'Unknown error'
+          });
         }
       }
     );
@@ -186,6 +199,7 @@ export function setupUserSocketServer(
       "callAnswer",
       async (data: { callerId: string; answer: string }) => {
         try {
+          console.log("[VIDEO CALL] Answer SDP:", JSON.parse(Buffer.from(data.answer, 'base64').toString()));
           console.log(
             `[VIDEO CALL] Received call answer from ${socket.userId}`
           );

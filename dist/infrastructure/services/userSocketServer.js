@@ -90,6 +90,7 @@ function setupUserSocketServer(server, container) {
         });
         socket.on("userCallOffer", (data) => __awaiter(this, void 0, void 0, function* () {
             try {
+                console.log("[VIDEO CALL] Offer SDP:", JSON.parse(Buffer.from(data.offer, 'base64').toString()));
                 console.log(`[VIDEO CALL] User ${socket.userId} is initiating a call to ${data.recipientId}`);
                 if (!socket.userId) {
                     throw new Error("User not authenticated");
@@ -115,10 +116,21 @@ function setupUserSocketServer(server, container) {
                     });
                     yield userVideoCallUseCase.endCall(call.id);
                 }
+                // Add timeout for call acceptance
+                setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                    const call = yield userVideoCallUseCase.getActiveCall(socket.userId);
+                    if (call && call.status === 'pending') {
+                        yield userVideoCallUseCase.endCall(call.id);
+                        socket.emit("callError", { message: "Call timed out" });
+                    }
+                }), 30000); // 30 second timeout
             }
             catch (error) {
-                console.error("[VIDEO CALL] Error initiating call:", error);
-                socket.emit("callError", { message: "Failed to initiate call" });
+                console.error("[VIDEO CALL] Error:", error);
+                socket.emit("callError", {
+                    message: "Failed to initiate call",
+                    details: error instanceof Error ? error.message : 'Unknown error'
+                });
             }
         }));
         socket.on("callAccepted", (data) => __awaiter(this, void 0, void 0, function* () {
@@ -142,6 +154,7 @@ function setupUserSocketServer(server, container) {
         }));
         socket.on("callAnswer", (data) => __awaiter(this, void 0, void 0, function* () {
             try {
+                console.log("[VIDEO CALL] Answer SDP:", JSON.parse(Buffer.from(data.answer, 'base64').toString()));
                 console.log(`[VIDEO CALL] Received call answer from ${socket.userId}`);
                 const call = yield userVideoCallUseCase.getActiveCall(socket.userId);
                 if (call) {

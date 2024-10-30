@@ -9,5 +9,6 @@ const rateLimit_1 = require("../middleware/rateLimit");
 const errorHandler_1 = require("../middleware/errorHandler");
 const router = express_1.default.Router();
 router.get("/twilio-token", rateLimit_1.twilioRateLimit, TwilioController_1.getTwilioToken);
+router.post("/rooms/:roomSid/end", rateLimit_1.twilioRateLimit, TwilioController_1.endRoom);
 router.use(errorHandler_1.errorHandler);
 exports.default = router;

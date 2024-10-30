@@ -19,6 +19,7 @@ const recruiterUserSocketServer_1 = require("./infrastructure/services/recruiter
 const authRoutes_1 = require("./presentation/routes/authRoutes");
 const adminRoutes_1 = require("./presentation/routes/adminRoutes");
 const RecruiterRoutes_1 = require("./presentation/routes/RecruiterRoutes");
+const twilio_routes_1 = __importDefault(require("./presentation/routes/twilio.routes"));
 const validateRequest_1 = require("./presentation/middlewares/validateRequest");
 const errorHandler_1 = require("./presentation/middlewares/errorHandler");
 console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID);
@@ -54,6 +55,7 @@ app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../
 app.use("/", authRoutes_1.authRouter);
 app.use("/admin", adminRoutes_1.adminRouter);
 app.use("/recruiter", RecruiterRoutes_1.recruiterRouter);
+app.use('/api', twilio_routes_1.default);
 app.use(validateRequest_1.validateRequest);
 app.use(errorHandler_1.errorHandler);
 app.use((req, res, next) => {

@@ -17,6 +17,7 @@ import { setupSocketServer } from "./infrastructure/services/recruiterUserSocket
 import { authRouter } from "./presentation/routes/authRoutes";
 import { adminRouter } from "./presentation/routes/adminRoutes";
 import { recruiterRouter } from "./presentation/routes/RecruiterRoutes";
+import twilioRoutes from './presentation/routes/twilio.routes';
 
 import { validateRequest } from "./presentation/middlewares/validateRequest";
 import { errorHandler } from "./presentation/middlewares/errorHandler";
@@ -65,6 +66,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/", authRouter);
 app.use("/admin", adminRouter);
 app.use("/recruiter", recruiterRouter);
+app.use('/api', twilioRoutes);
 
 app.use(validateRequest);
 app.use(errorHandler);

@@ -12,32 +12,35 @@ export const getTwilioToken = async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'Twilio configuration error' });
     }
 
-    // Create token with default options
+    // Create token with Network Traversal Service enabled
     const token = await client.tokens.create();
 
-    // Format the response with all available servers
+    // Log the servers we got from Twilio (for debugging)
+    console.log('Twilio ICE Servers:', token.iceServers?.map(server => ({
+      urls: server.urls || server.url,
+      type: server.urls?.toString().includes('turn') ? 'TURN' : 'STUN'
+    })));
+
+    // Format the response
     const response = {
       iceServers: [
-        // Include Google STUN servers as fallback
-        { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
-        // Add Twilio's TURN servers
+        // Twilio's STUN/TURN servers come first
         ...(token.iceServers?.map(server => ({
-          urls: Array.isArray(server.urls) ? server.urls : [server.urls],
+          urls: server.urls || server.url,
           username: server.username || '',
           credential: server.credential || ''
-        })) || [])
+        })) || []),
+        // Fallback STUN servers
+        { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
       ],
-      ttl: 3600,
-      date_created: new Date()
+      ttl: token.ttl || 3600,
+      date_created: token.dateCreated
     };
 
-    // Add security headers
     res.set({
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
       'Pragma': 'no-cache',
-      'Expires': '0',
-      'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
-      'Access-Control-Allow-Credentials': 'true'
+      'Expires': '0'
     });
 
     res.json(response);

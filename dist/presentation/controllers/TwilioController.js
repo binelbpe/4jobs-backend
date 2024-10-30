@@ -18,36 +18,41 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = (0, twilio_1.default)(accountSid, authToken);
 const getTwilioToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _a, _b;
     try {
         if (!accountSid || !authToken) {
             console.error('Missing Twilio credentials');
             return res.status(500).json({ error: 'Twilio configuration error' });
         }
-        // Create token with default options
+        // Create token with Network Traversal Service enabled
         const token = yield client.tokens.create();
-        // Format the response with all available servers
+        // Log the servers we got from Twilio (for debugging)
+        console.log('Twilio ICE Servers:', (_a = token.iceServers) === null || _a === void 0 ? void 0 : _a.map(server => {
+            var _a;
+            return ({
+                urls: server.urls || server.url,
+                type: ((_a = server.urls) === null || _a === void 0 ? void 0 : _a.toString().includes('turn')) ? 'TURN' : 'STUN'
+            });
+        }));
+        // Format the response
         const response = {
             iceServers: [
-                // Include Google STUN servers as fallback
-                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
-                // Add Twilio's TURN servers
-                ...(((_a = token.iceServers) === null || _a === void 0 ? void 0 : _a.map(server => ({
-                    urls: Array.isArray(server.urls) ? server.urls : [server.urls],
+                // Twilio's STUN/TURN servers come first
+                ...(((_b = token.iceServers) === null || _b === void 0 ? void 0 : _b.map(server => ({
+                    urls: server.urls || server.url,
                     username: server.username || '',
                     credential: server.credential || ''
-                }))) || [])
+                }))) || []),
+                // Fallback STUN servers
+                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
             ],
-            ttl: 3600,
-            date_created: new Date()
+            ttl: token.ttl || 3600,
+            date_created: token.dateCreated
         };
-        // Add security headers
         res.set({
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
             'Pragma': 'no-cache',
-            'Expires': '0',
-            'Access-Control-Allow-Origin': process.env.FRONTEND_URL || '*',
-            'Access-Control-Allow-Credentials': 'true'
+            'Expires': '0'
         });
         res.json(response);
     }

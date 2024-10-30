@@ -38,11 +38,10 @@ exports.recruiterSocketManager = recruiterSocketManager;
 exports.recruiterEventEmitter = recruiterEventEmitter;
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
-    origin: process.env.CLIENT_URL,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: process.env.FRONTEND_URL || '*',
     credentials: true,
-    exposedHeaders: ['Content-Length', 'Content-Type'],
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 // Add WebRTC specific headers
 app.use((req, res, next) => {

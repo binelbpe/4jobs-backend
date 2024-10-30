@@ -16,37 +16,49 @@ exports.getTwilioToken = void 0;
 const twilio_1 = __importDefault(require("twilio"));
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
+const apiKey = process.env.TWILIO_API_KEY;
+const apiSecret = process.env.TWILIO_API_SECRET;
 const client = (0, twilio_1.default)(accountSid, authToken);
 const getTwilioToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     try {
-        if (!accountSid || !authToken) {
+        if (!accountSid || !authToken || !apiKey || !apiSecret) {
             console.error('Missing Twilio credentials');
-            return res.status(500).json({ error: 'Twilio credentials not configured' });
+            return res.status(500).json({ error: 'Twilio configuration error' });
         }
-        // Create token with default options
-        const token = yield client.tokens.create();
-        console.log('Twilio token created:', {
-            iceServers: (_a = token.iceServers) === null || _a === void 0 ? void 0 : _a.length,
-            ttl: token.ttl
+        // Create token with Network Traversal Service
+        const token = yield client.tokens.create({
+            ttl: 3600
         });
-        // Format the response
+        // Log token creation but not sensitive data
+        console.log('Twilio token created:', {
+            timestamp: new Date().toISOString(),
+            iceServers: ((_a = token.iceServers) === null || _a === void 0 ? void 0 : _a.length) || 0
+        });
+        // Format and sanitize the response
         const response = {
             iceServers: ((_b = token.iceServers) === null || _b === void 0 ? void 0 : _b.map(server => ({
                 urls: server.url || server.urls,
                 username: server.username,
                 credential: server.credential
             }))) || [],
-            ttl: 3600, // 1 hour
-            date_created: new Date()
+            ttl: token.ttl || 3600,
+            date_created: token.dateCreated || new Date()
         };
+        // Cache control headers
+        res.set({
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        });
         res.json(response);
     }
     catch (error) {
         console.error('Error generating Twilio token:', error);
+        // Don't expose internal error details to client
         res.status(500).json({
-            error: 'Failed to generate Twilio token',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Failed to generate token',
+            code: 'TWILIO_TOKEN_ERROR'
         });
     }
 });

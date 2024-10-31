@@ -46,10 +46,15 @@ const {
 
 app.use(express.json());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true,
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'Cache-Control',
+    'X-Requested-With'
+  ]
 }));
 
 // Add WebRTC specific headers

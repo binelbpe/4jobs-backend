@@ -16,59 +16,75 @@ exports.endRoom = exports.getTwilioToken = void 0;
 const twilio_1 = __importDefault(require("twilio"));
 const uuid_1 = require("uuid");
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const apiKeySid = process.env.TWILIO_API_KEY_SID;
-const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
-const client = (0, twilio_1.default)(apiKeySid, apiKeySecret, { accountSid });
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = (0, twilio_1.default)(accountSid, authToken);
 const getTwilioToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a, _b, _c;
     try {
-        if (!accountSid || !apiKeySid || !apiKeySecret) {
-            console.error("Missing Twilio credentials");
-            return res.status(500).json({ error: "Twilio configuration error" });
+        if (!accountSid || !authToken) {
+            console.error('Missing Twilio credentials');
+            return res.status(500).json({ error: 'Twilio configuration error' });
         }
-        // Get Network Traversal Service token first
-        const ntsToken = yield client.tokens.create();
+        console.log('Initializing Twilio token generation with:', {
+            accountSid: `${accountSid.slice(0, 5)}...`,
+            hasAuthToken: !!authToken,
+            identity: req.query.identity
+        });
         // Create a unique room name
         const roomName = `room-${(0, uuid_1.v4)()}`;
-        // Create a Video room
-        const room = yield client.video.v1.rooms.create({
-            uniqueName: roomName,
-            type: "peer-to-peer",
-            maxParticipants: 2,
-        });
+        console.log('Created Twilio room:', roomName);
         // Create an Access Token
         const AccessToken = twilio_1.default.jwt.AccessToken;
         const VideoGrant = AccessToken.VideoGrant;
         // Create Video grant
         const videoGrant = new VideoGrant({
-            room: roomName,
+            room: roomName
         });
-        // Create access token
-        const token = new AccessToken(accountSid, apiKeySid, apiKeySecret, {
-            identity: req.query.identity || "user",
-        });
+        console.log('Created Twilio video grant for room:', roomName);
+        // Create access token with identity
+        const token = new AccessToken(accountSid, process.env.TWILIO_API_KEY, process.env.TWILIO_API_SECRET, { identity: req.query.identity || 'user' });
+        console.log('Created Twilio access token for identity:', req.query.identity);
         // Add video grant to token
         token.addGrant(videoGrant);
-        // Generate the token
-        const accessToken = token.toJwt();
+        // Get Network Traversal Service token
+        const ntsToken = yield client.tokens.create({
+            ttl: 86400 // 24 hours
+        });
+        console.log('Received Twilio NTS token with:', {
+            hasIceServers: ((_a = ntsToken.iceServers) === null || _a === void 0 ? void 0 : _a.length) || 0,
+            ttl: ntsToken.ttl,
+            username: ntsToken.username ? 'present' : 'missing'
+        });
+        // Format response
         const response = {
-            token: accessToken,
-            roomName: roomName,
-            roomSid: room.sid,
-            expires: Date.now() + 3600 * 1000,
-            // Include ICE servers from Network Traversal Service
-            iceServers: (_a = ntsToken.iceServers) === null || _a === void 0 ? void 0 : _a.map(server => ({
+            username: ntsToken.username,
+            ice_servers: (_b = ntsToken.iceServers) === null || _b === void 0 ? void 0 : _b.map(server => ({
                 urls: server.url || server.urls,
-                username: server.username || '',
-                credential: server.credential || ''
-            }))
+                username: server.username,
+                credential: server.credential
+            })),
+            date_updated: ntsToken.dateUpdated,
+            account_sid: ntsToken.accountSid,
+            ttl: ntsToken.ttl.toString(),
+            date_created: ntsToken.dateCreated,
+            password: ntsToken.password,
+            token: token.toJwt(),
+            roomName: roomName
         };
-        console.log('Sending Twilio config with ICE servers:', ((_b = response.iceServers) === null || _b === void 0 ? void 0 : _b.length) || 0, 'servers');
+        console.log('Sending Twilio configuration:', {
+            iceServers: ((_c = response.ice_servers) === null || _c === void 0 ? void 0 : _c.length) || 0,
+            hasToken: !!response.token,
+            roomName: response.roomName,
+            ttl: response.ttl
+        });
         res.json(response);
     }
     catch (error) {
-        console.error("Error generating Twilio token:", error);
-        res.status(500).json({ error: "Failed to generate token" });
+        console.error('Error generating Twilio token:', error);
+        res.status(500).json({
+            error: 'Failed to generate token',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 });
 exports.getTwilioToken = getTwilioToken;

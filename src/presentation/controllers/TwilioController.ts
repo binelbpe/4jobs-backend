@@ -1,6 +1,6 @@
-import { Request, Response } from 'express';
-import twilio from 'twilio';
-import { v4 as uuidv4 } from 'uuid';
+import { Request, Response } from "express";
+import twilio from "twilio";
+import { v4 as uuidv4 } from "uuid";
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const apiKeySid = process.env.TWILIO_API_KEY_SID;
@@ -11,9 +11,12 @@ const client = twilio(apiKeySid, apiKeySecret, { accountSid });
 export const getTwilioToken = async (req: Request, res: Response) => {
   try {
     if (!accountSid || !apiKeySid || !apiKeySecret) {
-      console.error('Missing Twilio credentials');
-      return res.status(500).json({ error: 'Twilio configuration error' });
+      console.error("Missing Twilio credentials");
+      return res.status(500).json({ error: "Twilio configuration error" });
     }
+
+    // Get Network Traversal Service token first
+    const ntsToken = await client.tokens.create();
 
     // Create a unique room name
     const roomName = `room-${uuidv4()}`;
@@ -21,8 +24,8 @@ export const getTwilioToken = async (req: Request, res: Response) => {
     // Create a Video room
     const room = await client.video.v1.rooms.create({
       uniqueName: roomName,
-      type: 'peer-to-peer', // Use P2P mode
-      maxParticipants: 2,   // Limit to 2 participants
+      type: "peer-to-peer",
+      maxParticipants: 2,
     });
 
     // Create an Access Token
@@ -31,16 +34,13 @@ export const getTwilioToken = async (req: Request, res: Response) => {
 
     // Create Video grant
     const videoGrant = new VideoGrant({
-      room: roomName
+      room: roomName,
     });
 
     // Create access token
-    const token = new AccessToken(
-      accountSid,
-      apiKeySid,
-      apiKeySecret,
-      { identity: req.query.identity as string || 'user' }
-    );
+    const token = new AccessToken(accountSid, apiKeySid, apiKeySecret, {
+      identity: (req.query.identity as string) || "user",
+    });
 
     // Add video grant to token
     token.addGrant(videoGrant);
@@ -52,13 +52,22 @@ export const getTwilioToken = async (req: Request, res: Response) => {
       token: accessToken,
       roomName: roomName,
       roomSid: room.sid,
-      expires: Date.now() + (3600 * 1000) // 1 hour from now
+      expires: Date.now() + 3600 * 1000,
+      // Include ICE servers from Network Traversal Service
+      iceServers: ntsToken.iceServers?.map(server => ({
+        urls: server.url || server.urls,
+        username: server.username || '',
+        credential: server.credential || ''
+      }))
     };
+
+    console.log('Sending Twilio config with ICE servers:', 
+      response.iceServers?.length || 0, 'servers');
 
     res.json(response);
   } catch (error) {
-    console.error('Error generating Twilio token:', error);
-    res.status(500).json({ error: 'Failed to generate token' });
+    console.error("Error generating Twilio token:", error);
+    res.status(500).json({ error: "Failed to generate token" });
   }
 };
 
@@ -67,12 +76,11 @@ export const endRoom = async (req: Request, res: Response) => {
   try {
     const { roomSid } = req.params;
 
-    await client.video.v1.rooms(roomSid)
-      .update({ status: 'completed' });
+    await client.video.v1.rooms(roomSid).update({ status: "completed" });
 
-    res.json({ message: 'Room ended successfully' });
+    res.json({ message: "Room ended successfully" });
   } catch (error) {
-    console.error('Error ending room:', error);
-    res.status(500).json({ error: 'Failed to end room' });
+    console.error("Error ending room:", error);
+    res.status(500).json({ error: "Failed to end room" });
   }
-}; 
+};

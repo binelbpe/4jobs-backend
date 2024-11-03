@@ -26,7 +26,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.InitiateVideoCallUseCase = void 0;
 const inversify_1 = require("inversify");
-const VideoCall_1 = require("../../../domain/entities/VideoCall");
 const types_1 = __importDefault(require("../../../types"));
 let InitiateVideoCallUseCase = class InitiateVideoCallUseCase {
     constructor(videoCallRepository) {
@@ -36,10 +35,9 @@ let InitiateVideoCallUseCase = class InitiateVideoCallUseCase {
         return __awaiter(this, void 0, void 0, function* () {
             const existingCall = yield this.videoCallRepository.findActiveCallForRecruiter(recruiterId);
             if (existingCall) {
-                throw new Error('Recruiter already has an active call');
+                yield this.videoCallRepository.updateStatus(existingCall.id, 'ended');
             }
-            const newVideoCall = new VideoCall_1.VideoCall('', recruiterId, userId, 'pending', new Date());
-            return this.videoCallRepository.create(newVideoCall);
+            return this.videoCallRepository.create(recruiterId, userId);
         });
     }
 };

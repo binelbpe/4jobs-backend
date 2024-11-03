@@ -88,7 +88,7 @@ import { SearchUsersAndJobsUseCase } from "../application/usecases/user/SearchUs
 import { IRecruiterSearchRepository } from "../domain/interfaces/repositories/recruiter/IRecruiterSearchRepository";
 import { MongoRecruiterSearchRepository } from "./database/mongoose/repositories/MongoRecruiterSearchRepository";
 import { SearchUsersUseCase } from "../application/usecases/recruiter/SearchUsersUseCase";
-import { IVideoCallRepository } from "../domain/interfaces/repositories/IVideoCallRepository";
+import { IVideoCallRepository } from "../domain/interfaces/repositories/recruiter/IVideoCallRepository";
 import { MongoVideoCallRepository } from "./database/mongoose/repositories/MongoVideoCallRepository";
 import { InitiateVideoCallUseCase } from "../application/usecases/recruiter/InitiateVideoCallUseCase";
 import { RespondToVideoCallUseCase } from "../application/usecases/user/RespondToVideoCallUseCase";
@@ -309,7 +309,9 @@ container
   .bind<GenerateResumeUseCase>(TYPES.GenerateResumeUseCase)
   .to(GenerateResumeUseCase);
 container.bind<ResumeController>(TYPES.ResumeController).to(ResumeController);
-container.bind<AdvancedJobSearchUseCase>(TYPES.AdvancedJobSearchUseCase).to(AdvancedJobSearchUseCase);
+container
+  .bind<AdvancedJobSearchUseCase>(TYPES.AdvancedJobSearchUseCase)
+  .to(AdvancedJobSearchUseCase);
 
 console.log(container);
 export { container };

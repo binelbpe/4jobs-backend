@@ -35,9 +35,9 @@ let RespondToVideoCallUseCase = class RespondToVideoCallUseCase {
         return __awaiter(this, void 0, void 0, function* () {
             const videoCall = yield this.videoCallRepository.findPendingCallForRecruiter(callerId);
             if (!videoCall) {
-                throw new Error('Video call not found');
+                throw new Error('No pending call found');
             }
-            const newStatus = accept ? 'active' : 'ended';
+            const newStatus = accept ? 'accepted' : 'rejected';
             return this.videoCallRepository.updateStatus(videoCall.id, newStatus);
         });
     }
@@ -45,6 +45,6 @@ let RespondToVideoCallUseCase = class RespondToVideoCallUseCase {
 exports.RespondToVideoCallUseCase = RespondToVideoCallUseCase;
 exports.RespondToVideoCallUseCase = RespondToVideoCallUseCase = __decorate([
     (0, inversify_1.injectable)(),
-    __param(0, (0, inversify_1.inject)(types_1.default.IVideoCallRepository)),
+    __param(0, (0, inversify_1.inject)(types_1.default.IUserVideoCallRepository)),
     __metadata("design:paramtypes", [Object])
 ], RespondToVideoCallUseCase);

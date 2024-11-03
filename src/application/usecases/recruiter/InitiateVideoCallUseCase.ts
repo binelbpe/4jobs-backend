@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
-import { IVideoCallRepository } from '../../../domain/interfaces/repositories/IVideoCallRepository';
-import { VideoCall } from '../../../domain/entities/VideoCall';
 import TYPES from '../../../types';
+import { IVideoCallRepository } from '../../../domain/interfaces/repositories/recruiter/IVideoCallRepository';
+import { VideoCall } from '../../../domain/entities/VideoCall';
 
 @injectable()
 export class InitiateVideoCallUseCase {
@@ -12,17 +12,9 @@ export class InitiateVideoCallUseCase {
   async execute(recruiterId: string, userId: string): Promise<VideoCall> {
     const existingCall = await this.videoCallRepository.findActiveCallForRecruiter(recruiterId);
     if (existingCall) {
-      throw new Error('Recruiter already has an active call');
+      await this.videoCallRepository.updateStatus(existingCall.id, 'ended');
     }
 
-    const newVideoCall = new VideoCall(
-      '',
-      recruiterId,
-      userId,
-      'pending',
-      new Date()
-    );
-
-    return this.videoCallRepository.create(newVideoCall);
+    return this.videoCallRepository.create(recruiterId, userId);
   }
 }

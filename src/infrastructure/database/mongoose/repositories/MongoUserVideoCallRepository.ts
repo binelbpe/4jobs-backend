@@ -1,115 +1,76 @@
 import { injectable } from 'inversify';
-
 import { IUserVideoCallRepository } from '../../../../domain/interfaces/repositories/user/IUserVideoCallRepository';
-
-import { UserVideoCall } from '../../../../domain/entities/UserVideoCall';
-
+import { VideoCall } from '../../../../domain/entities/VideoCall';
 import { UserVideoCallModel } from '../models/UserVideoCallModel';
 
-
-
 @injectable()
-
 export class MongoUserVideoCallRepository implements IUserVideoCallRepository {
-
-  async create(callerId: string, recipientId: string): Promise<UserVideoCall> {
-
+  async create(callerId: string, recipientId: string): Promise<VideoCall> {
     const videoCall = new UserVideoCallModel({
-
       callerId,
-
       recipientId,
-
       status: 'pending',
-
       mediaStatus: { audio: true, video: true },
-
-      expiresAt: new Date(Date.now() + 30000) // 30 seconds expiry
-
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      expiresAt: new Date(Date.now() + 30000)
     });
 
     await videoCall.save();
-
     return this.mapToEntity(videoCall);
-
   }
 
-
-
-  async updateStatus(callId: string, status: 'accepted' | 'rejected' | 'ended'): Promise<UserVideoCall> {
-
+  async updateStatus(
+    callId: string,
+    status: 'accepted' | 'rejected' | 'ended'
+  ): Promise<VideoCall> {
     const videoCall = await UserVideoCallModel.findByIdAndUpdate(
-
       callId,
-
-      { 
-
-        status, 
-
+      {
+        status,
         updatedAt: new Date(),
-
-        // Extend expiry for accepted calls
-
-        ...(status === 'accepted' && { expiresAt: new Date(Date.now() + 3600000) }) // 1 hour
-
+        ...(status === 'accepted' && { expiresAt: new Date(Date.now() + 3600000) })
       },
-
       { new: true }
-
     );
 
     if (!videoCall) {
-
       throw new Error('Video call not found');
-
     }
 
     return this.mapToEntity(videoCall);
-
   }
 
-
-
-  async getActiveCall(userId: string): Promise<UserVideoCall | null> {
-
-    const videoCall = await UserVideoCallModel.findOne({
-
+  async getActiveCall(userId: string): Promise<VideoCall | null> {
+    const call = await UserVideoCallModel.findOne({
       $or: [{ callerId: userId }, { recipientId: userId }],
-
-      status: { $in: ['pending', 'accepted'] },
-
+      status: { $in: ['pending', 'accepted'] }
     });
 
-    return videoCall ? this.mapToEntity(videoCall) : null;
-
+    return call ? this.mapToEntity(call) : null;
   }
 
+  async findPendingCallForRecruiter(callerId: string): Promise<VideoCall | null> {
+    const call = await UserVideoCallModel.findOne({
+      callerId,
+      status: 'pending'
+    });
 
+    return call ? this.mapToEntity(call) : null;
+  }
 
-  private mapToEntity(model: any): UserVideoCall {
-
-    return new UserVideoCall(
-
-      model._id.toString(),
-
-      model.callerId,
-
-      model.recipientId,
-
-      model.status,
-
-      model.mediaStatus || { audio: true, video: true }, // Default media status if not set
-
-      model.createdAt,
-
-      model.updatedAt,
-
-      model.expiresAt || new Date(model.createdAt.getTime() + 30000) // Default expiry if not set
-
+  private mapToEntity(document: any): VideoCall {
+    return new VideoCall(
+      document._id.toString(),
+      document.callerId,
+      document.recipientId,
+      document.status,
+      document.mediaStatus,
+      document.createdAt,
+      document.updatedAt,
+      document.expiresAt
     );
-
   }
-
 }
 
 

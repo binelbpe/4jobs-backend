@@ -20,47 +20,59 @@ const inversify_1 = require("inversify");
 const VideoCall_1 = require("../../../../domain/entities/VideoCall");
 const VideoCallModel_1 = require("../models/VideoCallModel");
 let MongoVideoCallRepository = class MongoVideoCallRepository {
-    create(videoCall) {
+    create(callerId, recipientId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const createdVideoCall = yield VideoCallModel_1.VideoCallModel.create(videoCall);
-            return this.mapToEntity(createdVideoCall);
+            const videoCall = new VideoCallModel_1.VideoCallModel({
+                callerId,
+                recipientId,
+                status: 'pending',
+                mediaStatus: { audio: true, video: true },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                expiresAt: new Date(Date.now() + 30000) // 30 seconds expiry
+            });
+            yield videoCall.save();
+            return this.mapToEntity(videoCall);
         });
     }
-    findById(id) {
+    updateStatus(callId, status) {
         return __awaiter(this, void 0, void 0, function* () {
-            const videoCall = yield VideoCallModel_1.VideoCallModel.findById(id);
-            return videoCall ? this.mapToEntity(videoCall) : null;
-        });
-    }
-    updateStatus(id, status) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const updatedVideoCall = yield VideoCallModel_1.VideoCallModel.findByIdAndUpdate(id, { status }, { new: true });
-            if (!updatedVideoCall) {
+            const videoCall = yield VideoCallModel_1.VideoCallModel.findByIdAndUpdate(callId, Object.assign({ status, updatedAt: new Date() }, (status === 'accepted' && { expiresAt: new Date(Date.now() + 3600000) })), { new: true });
+            if (!videoCall) {
                 throw new Error('Video call not found');
             }
-            return this.mapToEntity(updatedVideoCall);
+            return this.mapToEntity(videoCall);
         });
     }
-    findActiveCallForUser(userId) {
+    getActiveCall(userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const activeCall = yield VideoCallModel_1.VideoCallModel.findOne({ userId, status: 'active' });
-            return activeCall ? this.mapToEntity(activeCall) : null;
+            const call = yield VideoCallModel_1.VideoCallModel.findOne({
+                $or: [{ callerId: userId }, { recipientId: userId }],
+                status: { $in: ['pending', 'active', 'accepted'] }
+            });
+            return call ? this.mapToEntity(call) : null;
         });
     }
     findActiveCallForRecruiter(recruiterId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const activeCall = yield VideoCallModel_1.VideoCallModel.findOne({ recruiterId, status: 'active' });
-            return activeCall ? this.mapToEntity(activeCall) : null;
+            const call = yield VideoCallModel_1.VideoCallModel.findOne({
+                callerId: recruiterId,
+                status: { $in: ['pending', 'active', 'accepted'] }
+            });
+            return call ? this.mapToEntity(call) : null;
         });
     }
     findPendingCallForRecruiter(recruiterId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const pendingCall = yield VideoCallModel_1.VideoCallModel.findOne({ recruiterId, status: 'pending' });
-            return pendingCall ? this.mapToEntity(pendingCall) : null;
+            const call = yield VideoCallModel_1.VideoCallModel.findOne({
+                callerId: recruiterId,
+                status: 'pending'
+            });
+            return call ? this.mapToEntity(call) : null;
         });
     }
     mapToEntity(document) {
-        return new VideoCall_1.VideoCall(document._id.toString(), document.recruiterId, document.userId, document.status, document.startTime, document.endTime);
+        return new VideoCall_1.VideoCall(document._id.toString(), document.callerId, document.recipientId, document.status, document.mediaStatus, document.createdAt, document.updatedAt, document.expiresAt);
     }
 };
 exports.MongoVideoCallRepository = MongoVideoCallRepository;

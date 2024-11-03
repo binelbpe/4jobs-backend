@@ -1,7 +1,7 @@
 import express from "express";
 import { getTwilioToken, endRoom } from "../controllers/TwilioController";
-import { twilioRateLimit } from "../middleware/rateLimit";
-import { errorHandler } from "../middleware/errorHandler";
+import { twilioRateLimit } from "../middlewares/rateLimit";
+import { errorHandler } from "../middlewares/errorHandler";
 
 const router = express.Router();
 

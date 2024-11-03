@@ -228,29 +228,20 @@ export function setupUserSocketServer(
       }
     );
 
-    socket.on(
-      "iceCandidate",
-      (data: { recipientId: string; candidate: RTCIceCandidate }) => {
-        try {
-          if (!data.candidate) return;
-
-          const recipientSocket = userManager.getUserSocketId(data.recipientId);
-          if (recipientSocket) {
-            io.to(recipientSocket).emit("iceCandidate", {
-              candidate: {
-                candidate: data.candidate.candidate,
-                sdpMid: data.candidate.sdpMid,
-                sdpMLineIndex: data.candidate.sdpMLineIndex,
-                usernameFragment: data.candidate.usernameFragment,
-              },
-              callerId: socket.userId,
-            });
-          }
-        } catch (error) {
-          console.error("[VIDEO CALL] Error handling ICE candidate:", error);
+    socket.on("iceCandidate", (data: { recipientId: string; candidate: RTCIceCandidate }) => {
+      try {
+        console.log("Received ICE candidate for:", data.recipientId);
+        const recipientSocket = userManager.getUserSocketId(data.recipientId);
+        if (recipientSocket) {
+          io.to(recipientSocket).emit("iceCandidate", {
+            candidate: data.candidate,
+            callerId: socket.userId
+          });
         }
+      } catch (error) {
+        console.error("Error handling ICE candidate:", error);
       }
-    );
+    });
 
     socket.on("rejectCall", async (data: { callerId: string }) => {
       try {

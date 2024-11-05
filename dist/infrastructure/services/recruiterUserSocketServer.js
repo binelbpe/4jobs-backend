@@ -27,8 +27,6 @@ function setupSocketServer(server, container) {
     const eventEmitter = container.get(types_1.default.NotificationEventEmitter);
     const userRecruiterMessageUseCase = container.get(types_1.default.UserRecruiterMessageUseCase);
     const recruiterMessageUseCase = container.get(types_1.default.RecruiterMessageUseCase);
-    const initiateVideoCallUseCase = container.get(types_1.default.InitiateVideoCallUseCase);
-    const respondToVideoCallUseCase = container.get(types_1.default.RespondToVideoCallUseCase);
     io.use((0, socketAuthMiddleware_1.socketAuthMiddleware)(userManager));
     io.on('connection', (socket) => {
         console.log(`A user connected, socket id: ${socket.id}, user id: ${socket.userId}, user type: ${socket.userType}`);

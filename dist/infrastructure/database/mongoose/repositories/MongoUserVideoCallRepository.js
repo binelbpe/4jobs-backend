@@ -17,7 +17,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MongoUserVideoCallRepository = void 0;
 const inversify_1 = require("inversify");
-const VideoCall_1 = require("../../../../domain/entities/VideoCall");
+const UserVideoCall_1 = require("../../../../domain/entities/UserVideoCall");
 const UserVideoCallModel_1 = require("../models/UserVideoCallModel");
 let MongoUserVideoCallRepository = class MongoUserVideoCallRepository {
     create(callerId, recipientId) {
@@ -27,9 +27,7 @@ let MongoUserVideoCallRepository = class MongoUserVideoCallRepository {
                 recipientId,
                 status: 'pending',
                 mediaStatus: { audio: true, video: true },
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                expiresAt: new Date(Date.now() + 30000)
+                expiresAt: new Date(Date.now() + 30000) // 30 seconds expiry
             });
             yield videoCall.save();
             return this.mapToEntity(videoCall);
@@ -37,7 +35,8 @@ let MongoUserVideoCallRepository = class MongoUserVideoCallRepository {
     }
     updateStatus(callId, status) {
         return __awaiter(this, void 0, void 0, function* () {
-            const videoCall = yield UserVideoCallModel_1.UserVideoCallModel.findByIdAndUpdate(callId, Object.assign({ status, updatedAt: new Date() }, (status === 'accepted' && { expiresAt: new Date(Date.now() + 3600000) })), { new: true });
+            const videoCall = yield UserVideoCallModel_1.UserVideoCallModel.findByIdAndUpdate(callId, Object.assign({ status, updatedAt: new Date() }, (status === 'accepted' && { expiresAt: new Date(Date.now() + 3600000) }) // 1 hour
+            ), { new: true });
             if (!videoCall) {
                 throw new Error('Video call not found');
             }
@@ -46,24 +45,17 @@ let MongoUserVideoCallRepository = class MongoUserVideoCallRepository {
     }
     getActiveCall(userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const call = yield UserVideoCallModel_1.UserVideoCallModel.findOne({
+            const videoCall = yield UserVideoCallModel_1.UserVideoCallModel.findOne({
                 $or: [{ callerId: userId }, { recipientId: userId }],
-                status: { $in: ['pending', 'accepted'] }
+                status: { $in: ['pending', 'accepted'] },
             });
-            return call ? this.mapToEntity(call) : null;
+            return videoCall ? this.mapToEntity(videoCall) : null;
         });
     }
-    findPendingCallForRecruiter(callerId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const call = yield UserVideoCallModel_1.UserVideoCallModel.findOne({
-                callerId,
-                status: 'pending'
-            });
-            return call ? this.mapToEntity(call) : null;
-        });
-    }
-    mapToEntity(document) {
-        return new VideoCall_1.VideoCall(document._id.toString(), document.callerId, document.recipientId, document.status, document.mediaStatus, document.createdAt, document.updatedAt, document.expiresAt);
+    mapToEntity(model) {
+        return new UserVideoCall_1.UserVideoCall(model._id.toString(), model.callerId, model.recipientId, model.status, model.mediaStatus || { audio: true, video: true }, // Default media status if not set
+        model.createdAt, model.updatedAt, model.expiresAt || new Date(model.createdAt.getTime() + 30000) // Default expiry if not set
+        );
     }
 };
 exports.MongoUserVideoCallRepository = MongoUserVideoCallRepository;

@@ -2,15 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VideoCall = void 0;
 class VideoCall {
-    constructor(id, callerId, recipientId, status, mediaStatus, createdAt, updatedAt, expiresAt) {
+    constructor(id, recruiterId, userId, status, startTime, endTime) {
         this.id = id;
-        this.callerId = callerId;
-        this.recipientId = recipientId;
+        this.recruiterId = recruiterId;
+        this.userId = userId;
         this.status = status;
-        this.mediaStatus = mediaStatus;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.expiresAt = expiresAt;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 }
 exports.VideoCall = VideoCall;

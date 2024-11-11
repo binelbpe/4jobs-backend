@@ -17,7 +17,6 @@ import { setupSocketServer } from "./infrastructure/services/recruiterUserSocket
 import { authRouter } from "./presentation/routes/authRoutes";
 import { adminRouter } from "./presentation/routes/adminRoutes";
 import { recruiterRouter } from "./presentation/routes/RecruiterRoutes";
-import twilioRoutes from './presentation/routes/twilio.routes';
 
 import { validateRequest } from "./presentation/middlewares/validateRequest";
 import { errorHandler } from "./presentation/middlewares/errorHandler";
@@ -45,23 +44,21 @@ const {
 } = setupSocketServer(server, container);
 
 app.use(express.json());
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Cache-Control',
-    'X-Requested-With'
-  ]
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    exposedHeaders: ["Content-Length", "Content-Type"],
+  })
+);
 
-// Add WebRTC specific headers
+// Add WebRTC-specific headers
 app.use((req, res, next) => {
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   next();
 });
 
@@ -70,7 +67,6 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/", authRouter);
 app.use("/admin", adminRouter);
 app.use("/recruiter", recruiterRouter);
-app.use('/api', twilioRoutes);
 
 app.use(validateRequest);
 app.use(errorHandler);
@@ -98,18 +94,3 @@ export {
   recruiterSocketManager,
   recruiterEventEmitter,
 };
-
-// Add security headers
-app.use((req, res, next) => {
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-  res.setHeader('Access-Control-Allow-Private-Network', 'true');
-  
-  // Only allow your production domain
-  res.setHeader('Access-Control-Allow-Origin', process.env.CLIENT_URL || 'https://your-frontend-domain.com');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  
-  next();
-});

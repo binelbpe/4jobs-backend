@@ -19,7 +19,6 @@ const recruiterUserSocketServer_1 = require("./infrastructure/services/recruiter
 const authRoutes_1 = require("./presentation/routes/authRoutes");
 const adminRoutes_1 = require("./presentation/routes/adminRoutes");
 const RecruiterRoutes_1 = require("./presentation/routes/RecruiterRoutes");
-const twilio_routes_1 = __importDefault(require("./presentation/routes/twilio.routes"));
 const validateRequest_1 = require("./presentation/middlewares/validateRequest");
 const errorHandler_1 = require("./presentation/middlewares/errorHandler");
 console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID);
@@ -38,28 +37,23 @@ exports.recruiterSocketManager = recruiterSocketManager;
 exports.recruiterEventEmitter = recruiterEventEmitter;
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: process.env.CLIENT_URL,
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-        'Content-Type',
-        'Authorization',
-        'Cache-Control',
-        'X-Requested-With'
-    ]
+    exposedHeaders: ["Content-Length", "Content-Type"],
 }));
-// Add WebRTC specific headers
+// Add WebRTC-specific headers
 app.use((req, res, next) => {
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
     next();
 });
 app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../uploads")));
 app.use("/", authRoutes_1.authRouter);
 app.use("/admin", adminRoutes_1.adminRouter);
 app.use("/recruiter", RecruiterRoutes_1.recruiterRouter);
-app.use('/api', twilio_routes_1.default);
 app.use(validateRequest_1.validateRequest);
 app.use(errorHandler_1.errorHandler);
 app.use((req, res, next) => {
@@ -73,16 +67,4 @@ mongoose_1.default
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-});
-// Add security headers
-app.use((req, res, next) => {
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-    res.setHeader('Access-Control-Allow-Private-Network', 'true');
-    // Only allow your production domain
-    res.setHeader('Access-Control-Allow-Origin', process.env.CLIENT_URL || 'https://your-frontend-domain.com');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-    next();
 });

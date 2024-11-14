@@ -289,5 +289,4 @@ container
 container.bind<ResumeController>(TYPES.ResumeController).to(ResumeController);
 container.bind<AdvancedJobSearchUseCase>(TYPES.AdvancedJobSearchUseCase).to(AdvancedJobSearchUseCase);
 
-console.log(container);
 export { container };

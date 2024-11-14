@@ -12,9 +12,9 @@ const adminController = container_1.container.get(types_1.default.AdminControlle
 const adminRouter = (0, express_1.Router)();
 exports.adminRouter = adminRouter;
 adminRouter.post("/login", (req, res) => adminController.login(req, res));
-adminRouter.get("/dashboard", authMiddleware_1.authenticateadmin, (req, res) => adminController.dashboard(req, res)); // Only admin users can access this route
-adminRouter.get("/recruiters", authMiddleware_1.authenticateadmin, (req, res) => adminController.fetchRecruiters(req, res)); // Accessible by authenticateadmind users
-adminRouter.patch("/recruiters/:id/approve", authMiddleware_1.authenticateadmin, (req, res) => adminController.approveRecruiter(req, res)); // Only admin users can approve recruiters
+adminRouter.get("/dashboard", authMiddleware_1.authenticateadmin, (req, res) => adminController.dashboard(req, res));
+adminRouter.get("/recruiters", authMiddleware_1.authenticateadmin, (req, res) => adminController.fetchRecruiters(req, res));
+adminRouter.patch("/recruiters/:id/approve", authMiddleware_1.authenticateadmin, (req, res) => adminController.approveRecruiter(req, res));
 adminRouter.get("/users", authMiddleware_1.authenticateadmin, (req, res) => adminController.fetchUsers(req, res));
 adminRouter.patch("/users/:userId/block", authMiddleware_1.authenticateadmin, (req, res) => adminController.blockUser(req, res));
 adminRouter.patch("/users/:userId/unblock", authMiddleware_1.authenticateadmin, (req, res) => adminController.unblockUser(req, res));
@@ -25,5 +25,4 @@ adminRouter.get("/subscriptions", authMiddleware_1.authenticateadmin, (req, res)
 adminRouter.post("/subscriptions/:recruiterId/cancel", authMiddleware_1.authenticateadmin, (req, res) => adminController.cancelSubscription(req, res));
 adminRouter.get("/user-posts", authMiddleware_1.authenticateadmin, (req, res) => adminController.getUserPosts(req, res));
 adminRouter.post("/user-posts/:postId/toggle-block", authMiddleware_1.authenticateadmin, (req, res) => adminController.toggleUserPostBlock(req, res));
-// Add a new route for refreshing admin token
 adminRouter.post('/refresh-token', adminController.refreshAdminToken.bind(adminController));

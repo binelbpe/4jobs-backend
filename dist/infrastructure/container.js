@@ -256,4 +256,3 @@ container
     .to(GenerateResumeUseCase_1.GenerateResumeUseCase);
 container.bind(types_1.default.ResumeController).to(ResumeController_1.ResumeController);
 container.bind(types_1.default.AdvancedJobSearchUseCase).to(AdvancedJobSearchUseCase_1.AdvancedJobSearchUseCase);
-console.log(container);

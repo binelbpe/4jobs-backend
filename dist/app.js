@@ -9,26 +9,29 @@ const path_1 = __importDefault(require("path"));
 dotenv_1.default.config({ path: path_1.default.resolve(__dirname, "../.env") });
 const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
-const cors_1 = __importDefault(require("cors"));
 const http_1 = __importDefault(require("http"));
-const helmet_1 = __importDefault(require("helmet"));
-const express_mongo_sanitize_1 = __importDefault(require("express-mongo-sanitize"));
-const xss_1 = __importDefault(require("xss"));
 const hpp_1 = __importDefault(require("hpp"));
-const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 require("reflect-metadata");
+// Import middleware
+const helmetConfig_1 = __importDefault(require("./presentation/middlewares/helmetConfig"));
+const rateLimiter_1 = __importDefault(require("./presentation/middlewares/rateLimiter"));
+const corsMiddleware_1 = __importDefault(require("./presentation/middlewares/corsMiddleware"));
+const securityHeaders_1 = __importDefault(require("./presentation/middlewares/securityHeaders"));
+const xssMiddleware_1 = require("./presentation/middlewares/xssMiddleware");
+const csrfMiddleware_1 = require("./presentation/middlewares/csrfMiddleware");
+const containerMiddleware_1 = __importDefault(require("./presentation/middlewares/containerMiddleware"));
+const validateRequest_1 = require("./presentation/middlewares/validateRequest");
+const errorHandler_1 = require("./presentation/middlewares/errorHandler");
+// Import routes and services
 const container_1 = require("./infrastructure/container");
 const userSocketServer_1 = require("./infrastructure/services/userSocketServer");
 const recruiterUserSocketServer_1 = require("./infrastructure/services/recruiterUserSocketServer");
 const authRoutes_1 = require("./presentation/routes/authRoutes");
 const adminRoutes_1 = require("./presentation/routes/adminRoutes");
 const RecruiterRoutes_1 = require("./presentation/routes/RecruiterRoutes");
-const validateRequest_1 = require("./presentation/middlewares/validateRequest");
-const errorHandler_1 = require("./presentation/middlewares/errorHandler");
-// Load environment variables
 const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
-// Setup Socket.io servers
+// Setup Socket Servers
 const { io: userIo, userManager: userSocketManager, eventEmitter: userEventEmitter, } = (0, userSocketServer_1.setupUserSocketServer)(server, container_1.container);
 exports.userIo = userIo;
 exports.userSocketManager = userSocketManager;
@@ -37,73 +40,38 @@ const { io: recruiterIo, userManager: recruiterSocketManager, eventEmitter: recr
 exports.recruiterIo = recruiterIo;
 exports.recruiterSocketManager = recruiterSocketManager;
 exports.recruiterEventEmitter = recruiterEventEmitter;
-app.use((0, helmet_1.default)({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            connectSrc: ["'self'", process.env.CLIENT_URL || ''],
-        },
-    },
-    crossOriginEmbedderPolicy: true,
-    crossOriginOpenerPolicy: true,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-}));
-const limiter = (0, express_rate_limit_1.default)({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    message: 'Too many requests from this IP, please try again later',
-});
-app.use('/api/', limiter);
+// Security Middleware
+app.use(helmetConfig_1.default);
+app.use(rateLimiter_1.default);
+app.use(corsMiddleware_1.default);
+app.use(securityHeaders_1.default);
+// Body Parsing Middleware
 app.use(express_1.default.json({ limit: '50mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '50mb' }));
-app.use((0, express_mongo_sanitize_1.default)());
-const xssFilter = () => {
-    return (req, res, next) => {
-        if (req.body) {
-            const sanitizedBody = JSON.parse(JSON.stringify(req.body), (key, value) => {
-                if (typeof value === 'string') {
-                    return (0, xss_1.default)(value, {
-                        whiteList: {},
-                        stripIgnoreTag: true,
-                        stripIgnoreTagBody: ['script']
-                    });
-                }
-                return value;
-            });
-            req.body = sanitizedBody;
-        }
-        next();
-    };
-};
-app.use(xssFilter());
+// Security and Sanitization Middleware
 app.use((0, hpp_1.default)());
-app.use((0, cors_1.default)({
-    origin: process.env.CLIENT_URL,
-    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-    exposedHeaders: ["Content-Length", "Content-Type"],
-}));
-app.use((req, res, next) => {
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    next();
-});
+app.use((0, xssMiddleware_1.createXssMiddleware)(container_1.container));
+// Static Files
 app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../uploads")));
+// CSRF Protection
+app.use(csrfMiddleware_1.attachCsrfToken);
+app.use(csrfMiddleware_1.doubleCsrfProtection);
+// Routes
 app.use("/", authRoutes_1.authRouter);
 app.use("/admin", adminRoutes_1.adminRouter);
 app.use("/recruiter", RecruiterRoutes_1.recruiterRouter);
+// Error Handling
+app.use(csrfMiddleware_1.handleCsrfError);
 app.use(validateRequest_1.validateRequest);
 app.use(errorHandler_1.errorHandler);
-app.use((req, res, next) => {
-    req.container = container_1.container;
-    next();
-});
+// Container Injection
+app.use((0, containerMiddleware_1.default)(container_1.container));
+// Database Connection
 mongoose_1.default
     .connect(process.env.DATABASE_URL)
     .then(() => console.log("Connected to MongoDB"))
     .catch((err) => console.error("MongoDB connection error:", err));
+// Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

@@ -4,34 +4,34 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 import express from "express";
 import mongoose from "mongoose";
-import cors from "cors";
 import http from "http";
-import helmet from "helmet";
-import mongoSanitize from "express-mongo-sanitize";
-import xss from "xss";
 import hpp from "hpp";
-import rateLimit from "express-rate-limit";
 import "reflect-metadata";
 
+// Import middleware
+import helmetMiddleware from "./presentation/middlewares/helmetConfig";
+import rateLimiter from "./presentation/middlewares/rateLimiter";
+import corsMiddleware from "./presentation/middlewares/corsMiddleware";
+import securityHeaders from "./presentation/middlewares/securityHeaders";
+import { createXssMiddleware } from "./presentation/middlewares/xssMiddleware";
+import { attachCsrfToken, doubleCsrfProtection, handleCsrfError } from './presentation/middlewares/csrfMiddleware';
+import containerMiddleware from "./presentation/middlewares/containerMiddleware";
+import { validateRequest } from "./presentation/middlewares/validateRequest";
+import { errorHandler } from "./presentation/middlewares/errorHandler";
+import { AuthMiddleware } from './presentation/middlewares/authMiddleware';
+
+// Import routes and services
 import { container } from "./infrastructure/container";
-import TYPES from "./types";
 import { setupUserSocketServer } from "./infrastructure/services/userSocketServer";
 import { setupSocketServer } from "./infrastructure/services/recruiterUserSocketServer";
-
 import { authRouter } from "./presentation/routes/authRoutes";
 import { adminRouter } from "./presentation/routes/adminRoutes";
 import { recruiterRouter } from "./presentation/routes/RecruiterRoutes";
 
-import { validateRequest } from "./presentation/middlewares/validateRequest";
-import { errorHandler } from "./presentation/middlewares/errorHandler";
-
-// Load environment variables
-
-
 const app = express();
 const server = http.createServer(app);
 
-// Setup Socket.io servers
+// Setup Socket Servers
 const {
   io: userIo,
   userManager: userSocketManager,
@@ -44,98 +44,47 @@ const {
   eventEmitter: recruiterEventEmitter,
 } = setupSocketServer(server, container);
 
+// Security Middleware
+app.use(helmetMiddleware);
+app.use(rateLimiter);
+app.use(corsMiddleware);
+app.use(securityHeaders);
 
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        connectSrc: ["'self'", process.env.CLIENT_URL || ''],
-      },
-    },
-    crossOriginEmbedderPolicy: true,
-    crossOriginOpenerPolicy: true,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
-);
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100,
-  message: 'Too many requests from this IP, please try again later',
-});
-app.use('/api/', limiter);
-
+// Body Parsing Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-app.use(mongoSanitize());
-
-
-const xssFilter = () => {
-  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.body) {
-      const sanitizedBody = JSON.parse(JSON.stringify(req.body), (key, value) => {
-        if (typeof value === 'string') {
-          return xss(value, {
-            whiteList: {},    
-            stripIgnoreTag: true,  
-            stripIgnoreTagBody: ['script'] 
-          });
-        }
-        return value;
-      });
-      req.body = sanitizedBody;
-    }
-    next();
-  };
-};
-app.use(xssFilter());
-
+// Security and Sanitization Middleware
 app.use(hpp());
+app.use(createXssMiddleware(container));
 
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL,
-    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-    exposedHeaders: ["Content-Length", "Content-Type"],
-  })
-);
-
-
-app.use((req, res, next) => {
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  next();
-});
-
-
+// Static Files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// CSRF Protection
+app.use(attachCsrfToken);
+app.use(doubleCsrfProtection);
 
+// Routes
 app.use("/", authRouter);
 app.use("/admin", adminRouter);
 app.use("/recruiter", recruiterRouter);
 
-
+// Error Handling
+app.use(handleCsrfError);
 app.use(validateRequest);
 app.use(errorHandler);
 
-app.use((req: any, res, next) => {
-  req.container = container;
-  next();
-});
+// Container Injection
+app.use(containerMiddleware(container));
 
-
+// Database Connection
 mongoose
   .connect(process.env.DATABASE_URL!)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-
+// Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

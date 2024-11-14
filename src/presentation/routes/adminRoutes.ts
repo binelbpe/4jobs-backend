@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { AdminController } from "../controllers/AdminController";
-import { authenticateadmin } from "../middlewares/authMiddleware";
+import { createAuthMiddleware } from '../middlewares/authMiddleware';
 import { container } from "../../infrastructure/container";
 import TYPES from "../../types";
 import { adminMiddleware } from "../middlewares/adminMiddleware";
@@ -8,6 +8,8 @@ import { adminMiddleware } from "../middlewares/adminMiddleware";
 const adminController = container.get<AdminController>(TYPES.AdminController);
 
 const adminRouter = Router();
+
+const { authenticateadmin } = createAuthMiddleware(container);
 
 adminRouter.post("/login", (req, res) => adminController.login(req, res));
 

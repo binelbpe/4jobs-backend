@@ -7,12 +7,13 @@ import { ProfileController } from "../controllers/user/ProfileController";
 import { JobPostControllerUser } from "../controllers/user/JobPostControllerUser";
 import { PostController } from "../controllers/user/PostController";
 import { ConnectionController } from "../controllers/user/ConnectionController";
-import { authenticate } from "../middlewares/authMiddleware";
+import { createAuthMiddleware } from '../middlewares/authMiddleware';
 import { S3Service } from "../../infrastructure/services/S3Service";
 import { MessageController } from "../controllers/user/MessageController";
 import { UserRecruiterMessageController } from "../controllers/user/UserRecruiterMessageController";
 import { ResumeController } from "../controllers/user/ResumeController";
-import { refreshTokenMiddleware } from "../middlewares/authMiddleware";
+
+const { authenticate, refreshTokenMiddleware } = createAuthMiddleware(container);
 
 const profileController = container.get<ProfileController>(
   TYPES.ProfileController
